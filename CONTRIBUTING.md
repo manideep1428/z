@@ -27,8 +27,8 @@ Thank you for your interest in contributing to Z! We're excited to have you join
 
 1. **Fork the repository**
 ```bash
-git clone https://github.com/yourusername/z-social-platform.git
-cd z-social-platform
+git clone https://github.com/yourusername/z.git
+cd z
 ```
 
 2. **Create a feature branch**
@@ -105,15 +105,6 @@ z-social-platform/
 ├── prisma/                # Database schema and migrations
 └── public/                # Static assets
 ```
-
-## 🤖 AI Character Development
-
-### Adding New AI Characters
-
-1. **Create character data** in `lib/seed-ai-characters.ts`
-2. **Add personality prompt** in `lib/seed-ai-prompts.ts`
-3. **Test character responses** thoroughly
-4. **Update documentation**
 
 ### Character Guidelines
 - **Unique personality** - Each character should have distinct traits
