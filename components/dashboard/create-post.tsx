@@ -42,7 +42,10 @@ export function CreatePost({ user, onPostCreated }: CreatePostProps) {
   const progress = (content.length / maxLength) * 100;
 
   useEffect(() => {
-    fetchAvailableUsers();
+    // We will fetch followers when the user types '@' or clicks the mention button,
+    // so initial fetching might not be needed unless we want to pre-load.
+    // For now, let's remove the initial fetch to avoid unnecessary API calls.
+    // fetchAvailableUsers();
   }, []);
 
   useEffect(() => {
@@ -64,6 +67,7 @@ export function CreatePost({ user, onPostCreated }: CreatePostProps) {
           setMentionStartPos(lastAtIndex);
           setShowMentions(true);
           setSelectedMentionIndex(0);
+          fetchAvailableUsers(); // Fetch users when '@' is typed and conditions met
           return;
         }
       }
@@ -108,24 +112,36 @@ export function CreatePost({ user, onPostCreated }: CreatePostProps) {
       textarea.removeEventListener('input', handleInputChange);
       textarea.removeEventListener('keydown', handleKeyDown);
     };
-  }, [showMentions, mentionQuery, availableUsers, selectedMentionIndex]);
+  }, [showMentions, mentionQuery, availableUsers, selectedMentionIndex, user.id]); // Added user.id as fetchAvailableUsers depends on it.
 
   const fetchAvailableUsers = async () => {
+    // Only fetch if we don't have users or if the mention query is active
+    if (availableUsers.length > 0 && !mentionQuery && !showMentionButton) return; // also check showMentionButton state
+
+    setIsLoading(true); // Consider a more specific loading state for mentions
     try {
-      const response = await fetch(`/api/follow-suggestions?userId=${user.id}`);
+      // Fetch actual followers
+      const response = await fetch(`/api/users/${user.id}/followers`);
       if (response.ok) {
         const data = await response.json();
-        const users = data.suggestions.map((suggestion: any) => ({
-          id: suggestion.id,
-          username: suggestion.username,
-          displayName: suggestion.displayName,
-          avatarUrl: suggestion.avatarUrl,
-          accountType: suggestion.accountType
+        // The API returns { followers: [...] }
+        const users = data.followers.map((follower: any) => ({
+          id: follower.id,
+          username: follower.username,
+          displayName: follower.displayName || follower.username, // Ensure displayName has a fallback
+          avatarUrl: follower.avatarUrl,
+          accountType: follower.accountType || 'HUMAN' // Default to HUMAN if not present
         }));
         setAvailableUsers(users);
+      } else {
+        toast.error('Could not load users to mention.');
+        console.error('Failed to fetch followers for mentions:', await response.text());
       }
     } catch (error) {
-      console.error('Failed to fetch available users:', error);
+      toast.error('Error fetching users for mentions.');
+      console.error('Failed to fetch followers for mentions:', error);
+    } finally {
+      setIsLoading(false); // Reset loading state
     }
   };
 
@@ -191,7 +207,11 @@ export function CreatePost({ user, onPostCreated }: CreatePostProps) {
   };
 
   const handleMentionButtonClick = () => {
-    setShowMentionButton(!showMentionButton);
+    const willShow = !showMentionButton;
+    setShowMentionButton(willShow);
+    if (willShow) {
+      fetchAvailableUsers(); // Fetch users when mention button is clicked to show list
+    }
   };
 
   const handleMentionFromButton = (mentionUser: MentionUser) => {
