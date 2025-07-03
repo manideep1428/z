@@ -188,44 +188,44 @@ export function PostCard({ post, onPostDeleted, onViewComments, showTopComments 
   };
 
   return (
-    <Card className="post-modern hover-lift group">
-      <CardContent className="p-6">
-        <div className="flex space-x-4">
-          <div className="relative">
-            <Avatar className={`w-14 h-14 ring-2 transition-all duration-300 group-hover:scale-110 ${
+    <Card className="post-modern hover-lift group rounded-xl overflow-hidden"> {/* Added rounded-xl and overflow-hidden */}
+      <CardContent className="p-5 sm:p-6"> {/* Slightly reduced padding on smallest screens */}
+        <div className="flex space-x-3 sm:space-x-4">
+          <div className="relative shrink-0"> {/* Added shrink-0 to prevent avatar squishing */}
+            <Avatar className={`w-12 h-12 sm:w-14 sm:h-14 ring-2 transition-all duration-300 group-hover:scale-105 ${ {/* Slightly smaller avatar on mobile */}
               isAI ? 'ring-green-400/50 hover:ring-green-400' : 'ring-purple-400/30 hover:ring-purple-400/60'
             }`}>
               <AvatarImage 
                 src={isAI ? post.aiAuthor?.avatarUrl : post.author?.profile?.avatarUrl} 
-                alt={author?.displayName} 
+                alt={author?.displayName || ''}
               />
-              <AvatarFallback className={`font-bold text-lg ${
+              <AvatarFallback className={`font-bold text-base sm:text-lg ${ {/* Adjusted fallback text size */}
                 isAI ? 'bg-green-500 text-white' : 'bg-gradient-to-br from-purple-500 to-pink-500 text-white'
               }`}>
                 {author?.displayName?.split(' ').map(n => n[0]).join('') || '?'}
               </AvatarFallback>
             </Avatar>
             {isAI && (
-              <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full w-5 h-5 shadow-lg ring-2 ring-background"></div>
+              <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full w-4 h-4 sm:w-5 sm:h-5 shadow-lg ring-2 ring-background"></div> {/* Responsive AI badge */}
             )}
           </div>
           
-          <div className="flex-1 space-y-3">
+          <div className="flex-1 space-y-3.5"> {/* Increased default space-y slightly */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-foreground hover:text-gradient transition-all cursor-pointer flex items-center gap-2">
+              <div className="flex items-baseline space-x-1.5 sm:space-x-2"> {/* Adjusted spacing for author line */}
+                <span className="font-semibold text-foreground hover:text-gradient transition-all cursor-pointer flex items-center gap-2 text-sm sm:text-base"> {/* Responsive display name size */}
                   {author?.displayName || author?.username}
                   {isAI && (
-                    <Badge className="text-xs px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30">
+                    <Badge className="text-xs px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 self-center"> {/* Align badge if display name wraps */}
                       AI
                     </Badge>
                   )}
                 </span>
-                <span className="text-muted-foreground text-sm">
+                <span className="text-muted-foreground text-xs hover:underline cursor-pointer"> {/* Smaller and muted username, add underline on hover */}
                   @{author?.username}
                 </span>
-                <span className="text-muted-foreground text-sm">•</span>
-                <span className="text-muted-foreground text-sm hover:text-green-400 transition-colors cursor-pointer">
+                <span className="text-muted-foreground text-xs">•</span>
+                <span className="text-muted-foreground text-xs hover:text-green-400 transition-colors cursor-pointer">
                   {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
                 </span>
               </div>
@@ -252,21 +252,21 @@ export function PostCard({ post, onPostDeleted, onViewComments, showTopComments 
             </div>
             
             <div 
-              className="text-foreground leading-relaxed text-[16px] cursor-pointer"
+              className="text-foreground leading-relaxed text-base sm:text-[16px] cursor-pointer py-1" // Added py-1 for a bit more vertical space around content
               onClick={() => onViewComments?.(post.id)}
               dangerouslySetInnerHTML={{ __html: renderContent(post.content) }}
             />
             
             {/* Top Comments Preview */}
             {showTopComments && post.replies && post.replies.length > 0 && (
-              <div className="mt-4 space-y-3 border-l-2 border-gradient-to-b from-green-400 to-blue-400 pl-4 bg-white/5 rounded-r-lg p-3">
+              <div className="mt-3 space-y-3 border-l-2 border-gradient-to-b from-green-400 to-blue-400 pl-3 sm:pl-4 bg-white/5 rounded-r-lg p-3"> {/* Adjusted mt and pl */}
                 {post.replies.slice(0, 2).map((reply: any) => (
-                  <div key={reply.id} className="flex items-start space-x-3">
-                    <div className="relative">
-                      <Avatar className="w-8 h-8">
+                  <div key={reply.id} className="flex items-start space-x-2 sm:space-x-3"> {/* Adjusted spacing */}
+                    <div className="relative shrink-0"> {/* Added shrink-0 */}
+                      <Avatar className="w-7 h-7 sm:w-8 sm:h-8"> {/* Slightly smaller comment avatar */}
                         <AvatarImage 
                           src={reply.aiAuthor?.avatarUrl || reply.author?.profile?.avatarUrl} 
-                          alt={reply.aiAuthor?.displayName || reply.author?.profile?.displayName} 
+                          alt={reply.aiAuthor?.displayName || reply.author?.profile?.displayName || ''}
                         />
                         <AvatarFallback className={`text-xs ${
                           reply.aiAuthor ? 'bg-green-500 text-white' : 'bg-gradient-to-br from-purple-400 to-pink-400 text-white'
@@ -275,21 +275,21 @@ export function PostCard({ post, onPostDeleted, onViewComments, showTopComments 
                         </AvatarFallback>
                       </Avatar>
                       {reply.aiAuthor && (
-                        <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full w-3 h-3 shadow-sm ring-1 ring-background"></div>
+                        <div className="absolute -bottom-0.5 -right-0.5 bg-green-500 rounded-full w-2.5 h-2.5 sm:w-3 sm:h-3 shadow-sm ring-1 ring-background"></div> {/* Responsive AI badge */}
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-1 text-xs">
-                        <span className="font-medium text-gradient">
+                        <span className="font-medium text-gradient truncate"> {/* Added truncate */}
                           {reply.aiAuthor?.displayName || reply.author?.profile?.displayName}
                         </span>
                         {reply.aiAuthor && (
-                          <Badge className="text-xs px-1 py-0 bg-green-500/20 text-green-400 border border-green-500/30">
+                          <Badge className="text-[10px] sm:text-xs px-1 py-0 bg-green-500/20 text-green-400 border border-green-500/30 self-center"> {/* Responsive badge, self-center */}
                             AI
                           </Badge>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mt-0.5 sm:mt-1"> {/* Responsive text, adjusted margin */}
                         {reply.content}
                       </p>
                     </div>
@@ -298,7 +298,7 @@ export function PostCard({ post, onPostDeleted, onViewComments, showTopComments 
                 {post.repliesCount > 2 && (
                   <button
                     onClick={() => onViewComments?.(post.id)}
-                    className="text-sm text-gradient hover:underline font-medium"
+                    className="text-xs sm:text-sm text-gradient hover:underline font-medium pt-1" /* Adjusted pt */
                   >
                     💬 View {post.repliesCount - 2} more replies
                   </button>
@@ -306,8 +306,8 @@ export function PostCard({ post, onPostDeleted, onViewComments, showTopComments 
               </div>
             )}
             
-            <div className="flex items-center justify-between pt-4 border-t border-white/10">
-              <div className="flex items-center space-x-6">
+            <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-white/10"> {/* Adjusted pt */}
+              <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4 lg:space-x-6"> {/* Responsive spacing for action buttons */}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -315,7 +315,8 @@ export function PostCard({ post, onPostDeleted, onViewComments, showTopComments 
                   onClick={() => onViewComments?.(post.id)}
                 >
                   <MessageCircle className="w-5 h-5 mr-2 group-hover/btn:scale-110 transition-transform" />
-                  <span className="font-medium">{post._count?.replies || post.repliesCount || 0}</span>
+                  <span className="font-medium hidden sm:inline">Comment</span>
+                  <span className="font-medium ml-1">{post._count?.replies || post.repliesCount || 0}</span>
                 </Button>
                 
                 <Button
@@ -330,7 +331,8 @@ export function PostCard({ post, onPostDeleted, onViewComments, showTopComments 
                   disabled={isLoading}
                 >
                   <Heart className={`w-5 h-5 mr-2 group-hover/btn:scale-110 transition-transform ${isLiked ? 'fill-current animate-pulse' : ''}`} />
-                  <span className="font-medium">{likesCount}</span>
+                  <span className="font-medium hidden sm:inline">Like</span>
+                  <span className="font-medium ml-1">{likesCount}</span>
                 </Button>
                 
                 <Button
@@ -340,7 +342,8 @@ export function PostCard({ post, onPostDeleted, onViewComments, showTopComments 
                   onClick={handleShare}
                 >
                   <Share2 className="w-5 h-5 mr-2 group-hover/btn:scale-110 transition-transform" />
-                  <span className="font-medium">{post.sharesCount || 0}</span>
+                  <span className="font-medium hidden sm:inline">Share</span>
+                  <span className="font-medium ml-1">{post.sharesCount || 0}</span>
                 </Button>
               </div>
               
@@ -356,7 +359,8 @@ export function PostCard({ post, onPostDeleted, onViewComments, showTopComments 
                   onClick={handleBookmark}
                   disabled={isLoading}
                 >
-                  <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-current' : ''}`} />
+                  <Bookmark className={`w-5 h-5 mr-1 ${isBookmarked ? 'fill-current' : ''}`} />
+                  <span className="font-medium hidden sm:inline">Save</span>
                 </Button>
                 
                 {likesCount > 100 && (
