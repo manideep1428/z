@@ -1,0 +1,326 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id
+  email         String   @unique
+  username      String   @unique
+  role          UserRole @default(HUMAN)
+  tier          UserTier @default(FREE)
+
+  metadata      UserMetadata?
+  profile       UserProfile?
+  posts         Post[]         @relation("UserPosts")
+  follows       Follow[]       @relation("Follower")
+  followers     Follow[]       @relation("Following")
+  aiFollows     AiFollow[]     @relation("UserFollowsAi")
+  groups        Group[]        @relation("GroupOwner")
+  groupMembers  GroupMember[]
+  chatGroups    ChatGroup[]    @relation("GroupCreator")
+  chatMessages  Message[]      @relation("UserSender")
+  chatGroupMembers ChatGroupMember[]
+  notifications Notification[] @relation("Recipient")
+  likes         Like[]         @relation("UserLikes")
+  bookmarks     Bookmark[]     @relation("UserBookmarks")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum UserRole {
+  HUMAN
+}
+
+enum UserTier {
+  FREE
+  PREMIUM
+}
+
+model UserMetadata {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String   @unique
+  dob       DateTime
+  interests String[]
+  persona   String?
+  createdAt DateTime @default(now())
+}
+
+model UserProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  username     String   @unique
+  displayName  String
+  bio          String?
+  description  String?
+
+  category     String?
+  tags         String[]
+  keywords     String?
+  sourceMedia  String?
+
+  avatarUrl    String?
+  avatarAlt    String?
+  bannerUrl    String?
+  bannerAlt    String?
+
+  accountType  AccountType @default(HUMAN)
+  language     String?
+  country      String?
+  createdAt    DateTime @default(now())
+
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum AccountType {
+  HUMAN
+}
+
+model AiAccount {
+  id             String   @id @default(cuid())
+  characterId    String   @unique
+  username       String   @unique
+  displayName    String
+  bio            String?
+  description    String?
+  characterType  String?
+  sourceMedia    String?
+  category       String?
+  tags           String[]
+  keywords       String?
+  language       String?
+  country        String?
+
+  avatarUrl      String?
+  avatarAlt      String?
+  bannerUrl      String?
+  bannerAlt      String?
+
+  model          String
+  provider       String
+  systemPrompt   String?
+  autoReply      Boolean  @default(true)
+  replyStyle     String?
+  replyDelayMs   Int?
+  createdAt      DateTime @default(now())
+
+  groupMembers   GroupMember[]
+  chatMessages   Message[]      @relation("AiSender")
+  chatGroupMembers ChatGroupMember[]
+  posts          Post[]         @relation("AiPosts")
+  aiPrompts      AiPrompt[]
+  aiFollowers    AiFollow[]     @relation("AiFollowed")
+}
+
+model AiPrompt {
+  id           String    @id @default(cuid())
+  characterId  String
+  systemPrompt String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  aiAccount    AiAccount @relation(fields: [characterId], references: [characterId], onDelete: Cascade)
+
+  @@index([characterId])
+}
+
+model AiFollow {
+  id          String    @id @default(cuid())
+  user        User      @relation("UserFollowsAi", fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  aiAccount   AiAccount @relation("AiFollowed", fields: [aiAccountId], references: [id], onDelete: Cascade)
+  aiAccountId String
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, aiAccountId])
+}
+
+model Post {
+  id         String   @id @default(cuid())
+  content    String
+  imageUrl   String?
+  videoUrl   String?
+  
+  // Author can be either human or AI
+  authorId   String?
+  aiAuthorId String?
+  
+  // Relations
+  author     User?     @relation("UserPosts", fields: [authorId], references: [id], onDelete: Cascade)
+  aiAuthor   AiAccount? @relation("AiPosts", fields: [aiAuthorId], references: [id], onDelete: Cascade)
+  
+  // Post threading
+  parent     Post?    @relation("PostReplies", fields: [parentId], references: [id])
+  parentId   String?
+  replies    Post[]   @relation("PostReplies")
+  
+  // AI mentions and interactions
+  aiMentions String[] // Array of AI character IDs mentioned in the post
+  mentions   String[] // Array of user IDs mentioned in the post
+  
+  // Engagement
+  likes      Like[]
+  bookmarks  Bookmark[]
+  
+  // Engagement metrics (computed from relations)
+  likesCount    Int @default(0)
+  repliesCount  Int @default(0)
+  sharesCount   Int @default(0)
+  
+  // Post metadata
+  isPublic      Boolean @default(true)
+  isAiGenerated Boolean @default(false)
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([aiAuthorId])
+  @@index([parentId])
+  @@index([createdAt])
+}
+
+model Like {
+  id     String @id @default(cuid())
+  user   User   @relation("UserLikes", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+}
+
+model Bookmark {
+  id     String @id @default(cuid())
+  user   User   @relation("UserBookmarks", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  follower    User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followerId  String
+  followed    User     @relation("Following", fields: [followedId], references: [id], onDelete: Cascade)
+  followedId  String
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followedId])
+}
+
+model Notification {
+  id          String        @id @default(cuid())
+  recipient   User          @relation("Recipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientId String
+  actorId     String
+  type        NotificationType
+  postId      String?
+  isRead      Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+}
+
+enum NotificationType {
+  MENTION
+  REPLY
+  AI_REPLY
+  AI_MENTION
+  LIKE
+  FOLLOW
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  avatarUrl   String?
+  isPublic    Boolean  @default(true)
+  ownerId     String
+  owner       User     @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     GroupMember[]
+  memberCount Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GroupMember {
+  id         String     @id @default(cuid())
+  groupId    String
+  userId     String?
+  aiId       String?
+  role       GroupRole  @default(MEMBER)
+
+  group      Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user       User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ai         AiAccount? @relation(fields: [aiId], references: [id], onDelete: Cascade)
+  joinedAt   DateTime   @default(now())
+
+  @@unique([groupId, userId])
+  @@unique([groupId, aiId])
+}
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model ChatGroup {
+  id         String         @id @default(cuid())
+  name       String
+  creatorId  String?
+  creator    User?          @relation("GroupCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  isPublic   Boolean        @default(false)
+  members    ChatGroupMember[]
+  messages   Message[]
+  createdAt  DateTime       @default(now())
+}
+
+model ChatGroupMember {
+  id         String       @id @default(cuid())
+  groupId    String
+  userId     String?
+  aiId       String?
+
+  group      ChatGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user       User?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ai         AiAccount?   @relation(fields: [aiId], references: [id], onDelete: Cascade)
+  joinedAt   DateTime     @default(now())
+}
+
+model Message {
+  id         String       @id @default(cuid())
+  groupId    String
+  senderId   String?
+  aiId       String?
+  content    String
+  createdAt  DateTime     @default(now())
+
+  group      ChatGroup    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender     User?        @relation("UserSender", fields: [senderId], references: [id], onDelete: Cascade)
+  aiSender   AiAccount?   @relation("AiSender", fields: [aiId], references: [id], onDelete: Cascade)
+}
+
+model Topic {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  postsCount  Int      @default(0)
+  followersCount Int   @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
